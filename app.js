@@ -1,4 +1,4 @@
-const STORAGE_KEY = "todo-app-items-v3";
+const STORAGE_KEY = "todo-app-items-v4";
 
 let todos = loadTodos();
 let filter = "all";
@@ -8,6 +8,7 @@ const form = document.getElementById("todo-form");
 const nameInput = document.getElementById("todo-name-input");
 const descriptionInput = document.getElementById("todo-description-input");
 const dueDateInput = document.getElementById("todo-due-date-input");
+const priorityInput = document.getElementById("todo-priority-input");
 const list = document.getElementById("todo-list");
 const template = document.getElementById("todo-item-template");
 const count = document.getElementById("todo-count");
@@ -20,9 +21,11 @@ form.addEventListener("submit", (event) => {
     name: nameInput.value,
     description: descriptionInput.value,
     dueDate: dueDateInput.value,
+    priority: priorityInput.value,
   });
 
   form.reset();
+  priorityInput.value = "med";
   persist();
   render();
 });
@@ -56,11 +59,13 @@ list.addEventListener("click", (event) => {
     const editNameInput = item.querySelector(".edit-name-input");
     const editDescriptionInput = item.querySelector(".edit-description-input");
     const editDueDateInput = item.querySelector(".edit-due-date-input");
+    const editPriorityInput = item.querySelector(".edit-priority-input");
 
     todos = TodoStore.editTodo(todos, todoId, {
       name: editNameInput?.value || "",
       description: editDescriptionInput?.value || "",
       dueDate: editDueDateInput?.value || "",
+      priority: editPriorityInput?.value || "",
     });
     editingId = null;
     persist();
@@ -126,19 +131,25 @@ function render() {
     const name = fragment.querySelector(".name");
     const description = fragment.querySelector(".description");
     const dueDate = fragment.querySelector(".due-date");
+    const priority = fragment.querySelector(".priority");
     const editNameInput = fragment.querySelector(".edit-name-input");
     const editDescriptionInput = fragment.querySelector(".edit-description-input");
     const editDueDateInput = fragment.querySelector(".edit-due-date-input");
+    const editPriorityInput = fragment.querySelector(".edit-priority-input");
 
     item.dataset.id = todo.id;
     item.classList.toggle("is-completed", todo.completed);
+    item.dataset.priority = todo.priority;
     toggle.checked = todo.completed;
     name.textContent = todo.name;
     description.textContent = todo.description || "No description";
     dueDate.textContent = formatDueDate(todo.dueDate);
+    priority.textContent = `Priority: ${formatPriority(todo.priority)}`;
+    priority.dataset.priority = todo.priority;
     editNameInput.value = todo.name;
     editDescriptionInput.value = todo.description;
     editDueDateInput.value = todo.dueDate;
+    editPriorityInput.value = todo.priority;
 
     if (editingId === todo.id) {
       item.classList.add("is-editing");
@@ -149,6 +160,16 @@ function render() {
 
   const remaining = TodoStore.countActive(todos);
   count.textContent = `${remaining} item${remaining === 1 ? "" : "s"} left`;
+}
+
+function formatPriority(priority) {
+  if (priority === "high") {
+    return "High";
+  }
+  if (priority === "low") {
+    return "Low";
+  }
+  return "Medium";
 }
 
 function formatDueDate(value) {

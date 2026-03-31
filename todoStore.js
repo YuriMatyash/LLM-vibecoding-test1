@@ -6,6 +6,8 @@
 
   root.TodoStore = factory();
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  const ALLOWED_PRIORITIES = ["low", "med", "high"];
+
   function createTodo(input) {
     const now = Date.now();
     const normalized = normalizeTaskInput(input);
@@ -15,6 +17,7 @@
       name: normalized.name,
       description: normalized.description,
       dueDate: normalized.dueDate,
+      priority: normalized.priority,
       completed: false,
       createdAt: now,
       updatedAt: now,
@@ -23,7 +26,7 @@
 
   function addTodo(todos, input) {
     const normalized = normalizeTaskInput(input);
-    if (!normalized.name || !normalized.dueDate) {
+    if (!isValidTask(normalized)) {
       return todos;
     }
 
@@ -41,7 +44,7 @@
 
   function editTodo(todos, id, input) {
     const normalized = normalizeTaskInput(input);
-    if (!normalized.name || !normalized.dueDate) {
+    if (!isValidTask(normalized)) {
       return todos;
     }
 
@@ -53,6 +56,7 @@
             name: normalized.name,
             description: normalized.description,
             dueDate: normalized.dueDate,
+            priority: normalized.priority,
             updatedAt: now,
           }
         : todo
@@ -101,9 +105,13 @@
       return null;
     }
 
-    const name = normalizeText(todo.name || todo.text);
-    const dueDate = normalizeText(todo.dueDate);
-    if (!name || !dueDate) {
+    const normalized = normalizeTaskInput(todo);
+    if (!normalized.name || !normalized.dueDate) {
+      normalized.name = normalizeText(todo.name || todo.text);
+      normalized.dueDate = normalizeText(todo.dueDate);
+    }
+
+    if (!isValidTask(normalized)) {
       return null;
     }
 
@@ -112,22 +120,35 @@
 
     return {
       id: todo.id,
-      name,
-      description: normalizeText(todo.description),
-      dueDate,
+      name: normalized.name,
+      description: normalized.description,
+      dueDate: normalized.dueDate,
+      priority: normalized.priority,
       completed: todo.completed,
       createdAt,
       updatedAt,
     };
   }
 
+  function isValidTask(task) {
+    return !!task.name && !!task.dueDate && ALLOWED_PRIORITIES.includes(task.priority);
+  }
+
   function normalizeTaskInput(input) {
     const source = input && typeof input === "object" ? input : {};
+    const priority = normalizePriority(source.priority);
+
     return {
       name: normalizeText(source.name),
       description: normalizeText(source.description),
       dueDate: normalizeText(source.dueDate),
+      priority,
     };
+  }
+
+  function normalizePriority(priority) {
+    const normalized = normalizeText(priority).toLowerCase();
+    return ALLOWED_PRIORITIES.includes(normalized) ? normalized : "med";
   }
 
   function normalizeTimestamp(value) {
