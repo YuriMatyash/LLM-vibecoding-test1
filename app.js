@@ -12,6 +12,7 @@ const count = document.getElementById("todo-count");
 const focusCount = document.getElementById("focus-count");
 const filterButtons = document.querySelectorAll(".filter");
 const clearCompletedButton = document.getElementById("clear-completed");
+const focusMeterBar = document.getElementById("focus-meter-bar");
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -158,8 +159,13 @@ function render() {
   });
 
   const remaining = TodoStore.countActive(todos);
+  const total = todos.length;
+  const completed = total - remaining;
+  const completionPercent = total ? Math.round((completed / total) * 100) : 0;
+
   count.textContent = `${remaining} active task${remaining === 1 ? "" : "s"}`;
   focusCount.textContent = String(remaining);
+  focusMeterBar.style.width = `${completionPercent}%`;
   clearCompletedButton.disabled = !todos.some((todo) => todo.completed);
 }
 

@@ -7,26 +7,31 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app">
-      <aside class="sidebar">
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Overview">
         <h1 class="brand">Digital Sanctuary</h1>
 
-        <section class="card focus-card" aria-label="Today's focus summary">
-          <p class="card-label">Today's Focus</p>
-          <p class="focus-number"><span id="focus-count">0</span> tasks remaining</p>
+        <section class="panel focus-panel" aria-label="Today's focus summary">
+          <p class="eyebrow">Today's Focus</p>
+          <p class="focus-copy"><span id="focus-count">0</span> tasks remaining</p>
           <div class="focus-meter" aria-hidden="true">
-            <div class="focus-meter-bar"></div>
+            <div id="focus-meter-bar" class="focus-meter-bar"></div>
           </div>
+        </section>
+
+        <section class="panel helper-panel" aria-label="Tip">
+          <p class="eyebrow">Daily Reflection</p>
+          <p>Small consistent steps keep your day calm and clear.</p>
         </section>
       </aside>
 
-      <section class="content" aria-label="Todo list">
-        <header>
+      <section class="main" aria-label="Todo list">
+        <header class="hero">
           <h2>Today</h2>
-          <p class="subtitle">Focus on what matters most in your sanctuary.</p>
+          <p>Focus on what matters most in your sanctuary.</p>
         </header>
 
-        <section class="card create-card" aria-label="Create a task">
+        <section class="panel composer-panel" aria-label="Create a task">
           <form id="todo-form" class="todo-form" autocomplete="off">
             <label for="todo-title-input" class="sr-only">Task title</label>
             <input id="todo-title-input" type="text" placeholder="Add a new task to your day..." maxlength="160" required />
@@ -51,7 +56,7 @@
     <template id="todo-item-template">
       <li class="todo-item">
         <label class="todo-main">
-          <input type="checkbox" class="toggle" />
+          <input type="checkbox" class="toggle" aria-label="Mark task complete" />
           <span class="title"></span>
         </label>
 
