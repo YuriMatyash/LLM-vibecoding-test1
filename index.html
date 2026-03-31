@@ -10,8 +10,15 @@
     <main class="app">
       <h1>Todo List</h1>
       <form id="todo-form" class="todo-form" autocomplete="off">
-        <label for="todo-input" class="sr-only">Add a task</label>
-        <input id="todo-input" type="text" placeholder="Add a task..." required maxlength="120" />
+        <label for="todo-name-input" class="sr-only">Task name</label>
+        <input id="todo-name-input" type="text" placeholder="Task name" required maxlength="120" />
+
+        <label for="todo-description-input" class="sr-only">Task description</label>
+        <input id="todo-description-input" type="text" placeholder="Task description" maxlength="240" />
+
+        <label for="todo-due-date-input" class="sr-only">Due date</label>
+        <input id="todo-due-date-input" type="date" required />
+
         <button type="submit">Add</button>
       </form>
 
@@ -30,11 +37,21 @@
 
     <template id="todo-item-template">
       <li class="todo-item">
-        <label>
+        <label class="todo-details">
           <input type="checkbox" class="toggle" />
-          <span class="text"></span>
-          <input type="text" class="edit-input" aria-label="Edit task" maxlength="120" />
+          <span class="content">
+            <span class="name"></span>
+            <span class="description"></span>
+            <span class="due-date"></span>
+          </span>
         </label>
+
+        <div class="edit-fields">
+          <input type="text" class="edit-name-input" aria-label="Edit task name" maxlength="120" />
+          <input type="text" class="edit-description-input" aria-label="Edit task description" maxlength="240" />
+          <input type="date" class="edit-due-date-input" aria-label="Edit due date" />
+        </div>
+
         <div class="actions">
           <button type="button" class="edit">Edit</button>
           <button type="button" class="save">Save</button>

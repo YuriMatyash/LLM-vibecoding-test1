@@ -6,17 +6,24 @@
 
   root.TodoStore = factory();
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
-  function createTodo(text) {
+  function createTodo(input) {
+    const now = Date.now();
+    const normalized = normalizeTaskInput(input);
+
     return {
       id: generateId(),
-      text: normalizeText(text),
+      name: normalized.name,
+      description: normalized.description,
+      dueDate: normalized.dueDate,
       completed: false,
+      createdAt: now,
+      updatedAt: now,
     };
   }
 
-  function addTodo(todos, text) {
-    const normalized = normalizeText(text);
-    if (!normalized) {
+  function addTodo(todos, input) {
+    const normalized = normalizeTaskInput(input);
+    if (!normalized.name || !normalized.dueDate) {
       return todos;
     }
 
@@ -28,16 +35,28 @@
   }
 
   function toggleTodo(todos, id, completed) {
-    return todos.map((todo) => (todo.id === id ? { ...todo, completed } : todo));
+    const now = Date.now();
+    return todos.map((todo) => (todo.id === id ? { ...todo, completed, updatedAt: now } : todo));
   }
 
-  function editTodo(todos, id, text) {
-    const normalized = normalizeText(text);
-    if (!normalized) {
-      return deleteTodo(todos, id);
+  function editTodo(todos, id, input) {
+    const normalized = normalizeTaskInput(input);
+    if (!normalized.name || !normalized.dueDate) {
+      return todos;
     }
 
-    return todos.map((todo) => (todo.id === id ? { ...todo, text: normalized } : todo));
+    const now = Date.now();
+    return todos.map((todo) =>
+      todo.id === id
+        ? {
+            ...todo,
+            name: normalized.name,
+            description: normalized.description,
+            dueDate: normalized.dueDate,
+            updatedAt: now,
+          }
+        : todo
+    );
   }
 
   function clearCompleted(todos) {
@@ -69,16 +88,53 @@
         return [];
       }
 
-      return parsed.filter(
-        (todo) =>
-          todo &&
-          typeof todo.id === "string" &&
-          typeof todo.text === "string" &&
-          typeof todo.completed === "boolean"
-      );
+      return parsed
+        .map((todo) => sanitizeStoredTodo(todo))
+        .filter((todo) => !!todo);
     } catch {
       return [];
     }
+  }
+
+  function sanitizeStoredTodo(todo) {
+    if (!todo || typeof todo.id !== "string" || typeof todo.completed !== "boolean") {
+      return null;
+    }
+
+    const name = normalizeText(todo.name || todo.text);
+    const dueDate = normalizeText(todo.dueDate);
+    if (!name || !dueDate) {
+      return null;
+    }
+
+    const createdAt = normalizeTimestamp(todo.createdAt);
+    const updatedAt = normalizeTimestamp(todo.updatedAt) || createdAt;
+
+    return {
+      id: todo.id,
+      name,
+      description: normalizeText(todo.description),
+      dueDate,
+      completed: todo.completed,
+      createdAt,
+      updatedAt,
+    };
+  }
+
+  function normalizeTaskInput(input) {
+    const source = input && typeof input === "object" ? input : {};
+    return {
+      name: normalizeText(source.name),
+      description: normalizeText(source.description),
+      dueDate: normalizeText(source.dueDate),
+    };
+  }
+
+  function normalizeTimestamp(value) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    return Date.now();
   }
 
   function normalizeText(text) {
