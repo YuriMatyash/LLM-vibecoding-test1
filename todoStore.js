@@ -6,18 +6,13 @@
 
   root.TodoStore = factory();
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
-  const ALLOWED_PRIORITIES = ["low", "med", "high"];
-
   function createTodo(input) {
     const now = Date.now();
-    const normalized = normalizeTaskInput(input);
+    const normalizedTitle = normalizeTitle(input?.title);
 
     return {
       id: generateId(),
-      name: normalized.name,
-      description: normalized.description,
-      dueDate: normalized.dueDate,
-      priority: normalized.priority,
+      title: normalizedTitle,
       completed: false,
       createdAt: now,
       updatedAt: now,
@@ -25,12 +20,22 @@
   }
 
   function addTodo(todos, input) {
-    const normalized = normalizeTaskInput(input);
-    if (!isValidTask(normalized)) {
+    const title = normalizeTitle(input?.title);
+    if (!title) {
       return todos;
     }
 
-    return [...todos, createTodo(normalized)];
+    return [...todos, createTodo({ title })];
+  }
+
+  function editTodo(todos, id, input) {
+    const title = normalizeTitle(input?.title);
+    if (!title) {
+      return todos;
+    }
+
+    const now = Date.now();
+    return todos.map((todo) => (todo.id === id ? { ...todo, title, updatedAt: now } : todo));
   }
 
   function deleteTodo(todos, id) {
@@ -40,27 +45,6 @@
   function toggleTodo(todos, id, completed) {
     const now = Date.now();
     return todos.map((todo) => (todo.id === id ? { ...todo, completed, updatedAt: now } : todo));
-  }
-
-  function editTodo(todos, id, input) {
-    const normalized = normalizeTaskInput(input);
-    if (!isValidTask(normalized)) {
-      return todos;
-    }
-
-    const now = Date.now();
-    return todos.map((todo) =>
-      todo.id === id
-        ? {
-            ...todo,
-            name: normalized.name,
-            description: normalized.description,
-            dueDate: normalized.dueDate,
-            priority: normalized.priority,
-            updatedAt: now,
-          }
-        : todo
-    );
   }
 
   function clearCompleted(todos) {
@@ -92,9 +76,7 @@
         return [];
       }
 
-      return parsed
-        .map((todo) => sanitizeStoredTodo(todo))
-        .filter((todo) => !!todo);
+      return parsed.map(sanitizeStoredTodo).filter(Boolean);
     } catch {
       return [];
     }
@@ -105,13 +87,8 @@
       return null;
     }
 
-    const normalized = normalizeTaskInput(todo);
-    if (!normalized.name || !normalized.dueDate) {
-      normalized.name = normalizeText(todo.name || todo.text);
-      normalized.dueDate = normalizeText(todo.dueDate);
-    }
-
-    if (!isValidTask(normalized)) {
+    const title = normalizeTitle(todo.title ?? todo.name ?? todo.text);
+    if (!title) {
       return null;
     }
 
@@ -120,46 +97,19 @@
 
     return {
       id: todo.id,
-      name: normalized.name,
-      description: normalized.description,
-      dueDate: normalized.dueDate,
-      priority: normalized.priority,
+      title,
       completed: todo.completed,
       createdAt,
       updatedAt,
     };
   }
 
-  function isValidTask(task) {
-    return !!task.name && !!task.dueDate && ALLOWED_PRIORITIES.includes(task.priority);
-  }
-
-  function normalizeTaskInput(input) {
-    const source = input && typeof input === "object" ? input : {};
-    const priority = normalizePriority(source.priority);
-
-    return {
-      name: normalizeText(source.name),
-      description: normalizeText(source.description),
-      dueDate: normalizeText(source.dueDate),
-      priority,
-    };
-  }
-
-  function normalizePriority(priority) {
-    const normalized = normalizeText(priority).toLowerCase();
-    return ALLOWED_PRIORITIES.includes(normalized) ? normalized : "med";
-  }
-
   function normalizeTimestamp(value) {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value;
-    }
-    return Date.now();
+    return typeof value === "number" && Number.isFinite(value) ? value : Date.now();
   }
 
-  function normalizeText(text) {
-    return String(text || "").trim();
+  function normalizeTitle(title) {
+    return String(title || "").trim();
   }
 
   function generateId() {
