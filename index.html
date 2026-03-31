@@ -33,11 +33,18 @@
         <label>
           <input type="checkbox" class="toggle" />
           <span class="text"></span>
+          <input type="text" class="edit-input" aria-label="Edit task" maxlength="120" />
         </label>
-        <button type="button" class="delete" aria-label="Delete task">✕</button>
+        <div class="actions">
+          <button type="button" class="edit">Edit</button>
+          <button type="button" class="save">Save</button>
+          <button type="button" class="cancel">Cancel</button>
+          <button type="button" class="delete" aria-label="Delete task">Delete</button>
+        </div>
       </li>
     </template>
 
+    <script src="todoStore.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

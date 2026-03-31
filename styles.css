@@ -25,7 +25,7 @@ body {
 }
 
 .app {
-  width: min(42rem, 100%);
+  width: min(48rem, 100%);
   background: var(--panel);
   border-radius: 1rem;
   box-shadow: 0 10px 25px rgb(0 0 0 / 8%);
@@ -53,7 +53,7 @@ h1 {
 button {
   border: 1px solid transparent;
   border-radius: 0.5rem;
-  padding: 0.6rem 0.9rem;
+  padding: 0.45rem 0.7rem;
   background: var(--accent);
   color: white;
   font-weight: 600;
@@ -72,7 +72,8 @@ button:hover {
   flex-wrap: wrap;
 }
 
-.filters {
+.filters,
+.actions {
   display: flex;
   gap: 0.4rem;
 }
@@ -89,7 +90,9 @@ button:hover {
   color: white;
 }
 
-.danger {
+.danger,
+.delete,
+.cancel {
   background: transparent;
   border-color: #fecaca;
   color: var(--danger);
@@ -118,10 +121,26 @@ button:hover {
   align-items: center;
   gap: 0.6rem;
   flex: 1;
+  min-width: 0;
 }
 
 .todo-item .text {
   overflow-wrap: anywhere;
+  flex: 1;
+}
+
+.todo-item .edit-input {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.todo-item .save,
+.todo-item .cancel {
+  display: none;
 }
 
 .todo-item.is-completed .text {
@@ -129,11 +148,16 @@ button:hover {
   color: var(--muted);
 }
 
-.delete {
-  background: transparent;
-  color: var(--danger);
-  border-color: #fecaca;
-  padding: 0.35rem 0.6rem;
+.todo-item.is-editing .text,
+.todo-item.is-editing .edit,
+.todo-item.is-editing .delete {
+  display: none;
+}
+
+.todo-item.is-editing .edit-input,
+.todo-item.is-editing .save,
+.todo-item.is-editing .cancel {
+  display: inline-flex;
 }
 
 .todo-count {

@@ -1,8 +1,8 @@
-const STORAGE_KEY = "todo-app-items-v1";
+const STORAGE_KEY = "todo-app-items-v2";
 
-/** @type {{id: string, text: string, completed: boolean}[]} */
 let todos = loadTodos();
 let filter = "all";
+let editingId = null;
 
 const form = document.getElementById("todo-form");
 const input = document.getElementById("todo-input");
@@ -14,17 +14,7 @@ const clearCompletedButton = document.getElementById("clear-completed");
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  const text = input.value.trim();
-  if (!text) {
-    return;
-  }
-
-  todos.push({
-    id: crypto.randomUUID(),
-    text,
-    completed: false,
-  });
-
+  todos = TodoStore.addTodo(todos, input.value);
   input.value = "";
   persist();
   render();
@@ -37,18 +27,34 @@ list.addEventListener("click", (event) => {
   }
 
   const item = target.closest(".todo-item");
-  if (!item) {
-    return;
-  }
-
-  const todoId = item.dataset.id;
+  const todoId = item?.dataset.id;
   if (!todoId) {
     return;
   }
 
   if (target.classList.contains("delete")) {
-    todos = todos.filter((todo) => todo.id !== todoId);
+    todos = TodoStore.deleteTodo(todos, todoId);
     persist();
+    render();
+    return;
+  }
+
+  if (target.classList.contains("edit")) {
+    editingId = todoId;
+    render();
+  }
+
+  if (target.classList.contains("save")) {
+    const editInput = item.querySelector(".edit-input");
+    todos = TodoStore.editTodo(todos, todoId, editInput?.value || "");
+    editingId = null;
+    persist();
+    render();
+    return;
+  }
+
+  if (target.classList.contains("cancel")) {
+    editingId = null;
     render();
   }
 });
@@ -65,16 +71,32 @@ list.addEventListener("change", (event) => {
     return;
   }
 
-  todos = todos.map((todo) =>
-    todo.id === todoId
-      ? {
-          ...todo,
-          completed: target.checked,
-        }
-      : todo
-  );
+  todos = TodoStore.toggleTodo(todos, todoId, target.checked);
   persist();
   render();
+});
+
+list.addEventListener("keydown", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || !target.classList.contains("edit-input")) {
+    return;
+  }
+
+  const item = target.closest(".todo-item");
+  const todoId = item?.dataset.id;
+  if (!todoId) {
+    return;
+  }
+
+  if (event.key === "Enter") {
+    todos = TodoStore.editTodo(todos, todoId, target.value);
+    editingId = null;
+    persist();
+    render();
+  } else if (event.key === "Escape") {
+    editingId = null;
+    render();
+  }
 });
 
 filterButtons.forEach((button) => {
@@ -88,7 +110,7 @@ filterButtons.forEach((button) => {
 });
 
 clearCompletedButton.addEventListener("click", () => {
-  todos = todos.filter((todo) => !todo.completed);
+  todos = TodoStore.clearCompleted(todos);
   persist();
   render();
 });
@@ -96,31 +118,29 @@ clearCompletedButton.addEventListener("click", () => {
 function render() {
   list.innerHTML = "";
 
-  const visibleTodos = todos.filter((todo) => {
-    if (filter === "active") {
-      return !todo.completed;
-    }
-    if (filter === "completed") {
-      return todo.completed;
-    }
-    return true;
-  });
+  const visibleTodos = TodoStore.filterTodos(todos, filter);
 
   visibleTodos.forEach((todo) => {
     const fragment = template.content.cloneNode(true);
     const item = fragment.querySelector(".todo-item");
     const toggle = fragment.querySelector(".toggle");
     const text = fragment.querySelector(".text");
+    const editInput = fragment.querySelector(".edit-input");
 
     item.dataset.id = todo.id;
     item.classList.toggle("is-completed", todo.completed);
     toggle.checked = todo.completed;
     text.textContent = todo.text;
+    editInput.value = todo.text;
+
+    if (editingId === todo.id) {
+      item.classList.add("is-editing");
+    }
 
     list.appendChild(fragment);
   });
 
-  const remaining = todos.filter((todo) => !todo.completed).length;
+  const remaining = TodoStore.countActive(todos);
   count.textContent = `${remaining} item${remaining === 1 ? "" : "s"} left`;
 }
 
@@ -129,27 +149,7 @@ function persist() {
 }
 
 function loadTodos() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return [];
-    }
-
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(
-      (todo) =>
-        todo &&
-        typeof todo.id === "string" &&
-        typeof todo.text === "string" &&
-        typeof todo.completed === "boolean"
-    );
-  } catch {
-    return [];
-  }
+  return TodoStore.parseStoredTodos(localStorage.getItem(STORAGE_KEY));
 }
 
 render();
