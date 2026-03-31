@@ -11,88 +11,68 @@ function test(name, fn) {
   }
 }
 
-test("addTodo trims fields and appends item", () => {
+test("addTodo trims title and appends item", () => {
   const result = TodoStore.addTodo([], {
-    name: "  task  ",
-    description: "  description  ",
-    dueDate: " 2026-04-10 ",
-    priority: " high ",
+    title: "  task  ",
   });
+
   assert.equal(result.length, 1);
-  assert.equal(result[0].name, "task");
-  assert.equal(result[0].description, "description");
-  assert.equal(result[0].dueDate, "2026-04-10");
-  assert.equal(result[0].priority, "high");
+  assert.equal(result[0].title, "task");
   assert.equal(result[0].completed, false);
   assert.equal(typeof result[0].createdAt, "number");
   assert.equal(typeof result[0].updatedAt, "number");
 });
 
-test("addTodo rejects blank name and due date", () => {
-  const blankName = TodoStore.addTodo([], {
-    name: "   ",
-    description: "x",
-    dueDate: "2026-04-10",
-    priority: "low",
-  });
-  const blankDate = TodoStore.addTodo([], {
-    name: "Task",
-    description: "x",
-    dueDate: "  ",
-    priority: "low",
+test("addTodo rejects blank titles", () => {
+  const blankTitle = TodoStore.addTodo([], {
+    title: "   ",
   });
 
-  assert.equal(blankName.length, 0);
-  assert.equal(blankDate.length, 0);
+  assert.equal(blankTitle.length, 0);
 });
 
-test("addTodo falls back to medium priority for invalid value", () => {
-  const result = TodoStore.addTodo([], {
-    name: "Task",
-    description: "desc",
-    dueDate: "2026-04-10",
-    priority: "urgent",
-  });
-
-  assert.equal(result.length, 1);
-  assert.equal(result[0].priority, "med");
-});
-
-test("editTodo updates fields including priority", () => {
+test("editTodo updates title and updatedAt", () => {
   const todos = [
     {
       id: "1",
-      name: "old",
-      description: "old desc",
-      dueDate: "2026-04-01",
-      priority: "low",
+      title: "old",
       completed: false,
       createdAt: 1,
       updatedAt: 1,
     },
   ];
+
   const result = TodoStore.editTodo(todos, "1", {
-    name: "new value",
-    description: "new desc",
-    dueDate: "2026-05-02",
-    priority: "high",
+    title: "new value",
   });
 
-  assert.equal(result[0].name, "new value");
-  assert.equal(result[0].description, "new desc");
-  assert.equal(result[0].dueDate, "2026-05-02");
-  assert.equal(result[0].priority, "high");
+  assert.equal(result[0].title, "new value");
   assert.ok(result[0].updatedAt >= 1);
+});
+
+test("editTodo rejects blank title", () => {
+  const todos = [
+    {
+      id: "1",
+      title: "old",
+      completed: false,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ];
+
+  const result = TodoStore.editTodo(todos, "1", {
+    title: "   ",
+  });
+
+  assert.equal(result[0].title, "old");
 });
 
 test("toggleTodo flips completed state and updates updatedAt", () => {
   const todos = [
     {
       id: "1",
-      name: "x",
-      description: "",
-      dueDate: "2026-04-01",
-      priority: "med",
+      title: "x",
       completed: false,
       createdAt: 1,
       updatedAt: 1,
@@ -108,46 +88,38 @@ test("parseStoredTodos ignores invalid shapes", () => {
   const raw = JSON.stringify([
     {
       id: "1",
-      name: "valid",
-      description: "ok",
-      dueDate: "2026-06-01",
-      priority: "high",
+      title: "valid",
       completed: false,
       createdAt: 1,
       updatedAt: 2,
     },
-    { id: 2, name: "invalid", dueDate: "2026-06-01", priority: "high", completed: false },
-    { id: "3", name: "invalid missing date", priority: "low", completed: false },
+    { id: 2, title: "invalid", completed: false },
+    { id: "3", title: "   ", completed: false },
   ]);
+
   const result = TodoStore.parseStoredTodos(raw);
   assert.equal(result.length, 1);
-  assert.equal(result[0].name, "valid");
-  assert.equal(result[0].priority, "high");
-});
-
-test("parseStoredTodos defaults missing priority to medium", () => {
-  const raw = JSON.stringify([
-    {
-      id: "1",
-      name: "valid",
-      description: "ok",
-      dueDate: "2026-06-01",
-      completed: false,
-      createdAt: 1,
-      updatedAt: 2,
-    },
-  ]);
-
-  const result = TodoStore.parseStoredTodos(raw);
-  assert.equal(result[0].priority, "med");
+  assert.equal(result[0].title, "valid");
 });
 
 test("filterTodos supports active and completed", () => {
   const todos = [
-    { id: "1", name: "a", description: "", dueDate: "2026-06-01", priority: "low", completed: false },
-    { id: "2", name: "b", description: "", dueDate: "2026-06-01", priority: "high", completed: true },
+    { id: "1", title: "a", completed: false },
+    { id: "2", title: "b", completed: true },
   ];
+
   assert.equal(TodoStore.filterTodos(todos, "active").length, 1);
   assert.equal(TodoStore.filterTodos(todos, "completed").length, 1);
   assert.equal(TodoStore.countActive(todos), 1);
+});
+
+test("clearCompleted removes completed tasks", () => {
+  const todos = [
+    { id: "1", title: "a", completed: false },
+    { id: "2", title: "b", completed: true },
+  ];
+
+  const result = TodoStore.clearCompleted(todos);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].id, "1");
 });

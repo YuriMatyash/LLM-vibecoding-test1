@@ -1,33 +1,32 @@
-const STORAGE_KEY = "todo-app-items-v4";
+const STORAGE_KEY = "todo-app-items-v5";
 
 let todos = loadTodos();
 let filter = "all";
 let editingId = null;
 
 const form = document.getElementById("todo-form");
-const nameInput = document.getElementById("todo-name-input");
-const descriptionInput = document.getElementById("todo-description-input");
-const dueDateInput = document.getElementById("todo-due-date-input");
-const priorityInput = document.getElementById("todo-priority-input");
+const titleInput = document.getElementById("todo-title-input");
 const list = document.getElementById("todo-list");
 const template = document.getElementById("todo-item-template");
 const count = document.getElementById("todo-count");
+const focusCount = document.getElementById("focus-count");
 const filterButtons = document.querySelectorAll(".filter");
 const clearCompletedButton = document.getElementById("clear-completed");
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  todos = TodoStore.addTodo(todos, {
-    name: nameInput.value,
-    description: descriptionInput.value,
-    dueDate: dueDateInput.value,
-    priority: priorityInput.value,
-  });
 
+  const nextTodos = TodoStore.addTodo(todos, { title: titleInput.value });
+  if (nextTodos === todos) {
+    titleInput.focus();
+    return;
+  }
+
+  todos = nextTodos;
   form.reset();
-  priorityInput.value = "med";
   persist();
   render();
+  titleInput.focus();
 });
 
 list.addEventListener("click", (event) => {
@@ -56,17 +55,14 @@ list.addEventListener("click", (event) => {
   }
 
   if (target.classList.contains("save")) {
-    const editNameInput = item.querySelector(".edit-name-input");
-    const editDescriptionInput = item.querySelector(".edit-description-input");
-    const editDueDateInput = item.querySelector(".edit-due-date-input");
-    const editPriorityInput = item.querySelector(".edit-priority-input");
+    const editTitleInput = item.querySelector(".edit-title-input");
+    const nextTodos = TodoStore.editTodo(todos, todoId, { title: editTitleInput?.value || "" });
+    if (nextTodos === todos) {
+      editTitleInput?.focus();
+      return;
+    }
 
-    todos = TodoStore.editTodo(todos, todoId, {
-      name: editNameInput?.value || "",
-      description: editDescriptionInput?.value || "",
-      dueDate: editDueDateInput?.value || "",
-      priority: editPriorityInput?.value || "",
-    });
+    todos = nextTodos;
     editingId = null;
     persist();
     render();
@@ -96,6 +92,23 @@ list.addEventListener("change", (event) => {
   render();
 });
 
+list.addEventListener("keydown", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || !target.classList.contains("edit-title-input")) {
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    target.closest(".todo-item")?.querySelector(".save")?.click();
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    target.closest(".todo-item")?.querySelector(".cancel")?.click();
+  }
+});
+
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     filter = button.dataset.filter || "all";
@@ -116,11 +129,10 @@ function render() {
   list.innerHTML = "";
 
   const visibleTodos = TodoStore.filterTodos(todos, filter);
-
   if (!visibleTodos.length) {
     const empty = document.createElement("li");
     empty.className = "empty-state";
-    empty.textContent = "No tasks yet. Add one to get started.";
+    empty.textContent = "Your sanctuary is clear. Add a task to begin.";
     list.appendChild(empty);
   }
 
@@ -128,57 +140,27 @@ function render() {
     const fragment = template.content.cloneNode(true);
     const item = fragment.querySelector(".todo-item");
     const toggle = fragment.querySelector(".toggle");
-    const name = fragment.querySelector(".name");
-    const description = fragment.querySelector(".description");
-    const dueDate = fragment.querySelector(".due-date");
-    const priority = fragment.querySelector(".priority");
-    const editNameInput = fragment.querySelector(".edit-name-input");
-    const editDescriptionInput = fragment.querySelector(".edit-description-input");
-    const editDueDateInput = fragment.querySelector(".edit-due-date-input");
-    const editPriorityInput = fragment.querySelector(".edit-priority-input");
+    const title = fragment.querySelector(".title");
+    const editTitleInput = fragment.querySelector(".edit-title-input");
 
     item.dataset.id = todo.id;
     item.classList.toggle("is-completed", todo.completed);
-    item.dataset.priority = todo.priority;
     toggle.checked = todo.completed;
-    name.textContent = todo.name;
-    description.textContent = todo.description || "No description";
-    dueDate.textContent = formatDueDate(todo.dueDate);
-    priority.textContent = `Priority: ${formatPriority(todo.priority)}`;
-    priority.dataset.priority = todo.priority;
-    editNameInput.value = todo.name;
-    editDescriptionInput.value = todo.description;
-    editDueDateInput.value = todo.dueDate;
-    editPriorityInput.value = todo.priority;
+    title.textContent = todo.title;
+    editTitleInput.value = todo.title;
 
     if (editingId === todo.id) {
       item.classList.add("is-editing");
+      queueMicrotask(() => editTitleInput.focus());
     }
 
     list.appendChild(fragment);
   });
 
   const remaining = TodoStore.countActive(todos);
-  count.textContent = `${remaining} item${remaining === 1 ? "" : "s"} left`;
-}
-
-function formatPriority(priority) {
-  if (priority === "high") {
-    return "High";
-  }
-  if (priority === "low") {
-    return "Low";
-  }
-  return "Medium";
-}
-
-function formatDueDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return `Due: ${value}`;
-  }
-
-  return `Due: ${date.toLocaleDateString()}`;
+  count.textContent = `${remaining} active task${remaining === 1 ? "" : "s"}`;
+  focusCount.textContent = String(remaining);
+  clearCompletedButton.disabled = !todos.some((todo) => todo.completed);
 }
 
 function persist() {
