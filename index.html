@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo List App</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Todo List</h1>
+      <form id="todo-form" class="todo-form" autocomplete="off">
+        <label for="todo-input" class="sr-only">Add a task</label>
+        <input id="todo-input" type="text" placeholder="Add a task..." required maxlength="120" />
+        <button type="submit">Add</button>
+      </form>
+
+      <section class="toolbar" aria-label="Todo controls">
+        <div class="filters" role="group" aria-label="Filter tasks">
+          <button type="button" data-filter="all" class="filter is-active">All</button>
+          <button type="button" data-filter="active" class="filter">Active</button>
+          <button type="button" data-filter="completed" class="filter">Completed</button>
+        </div>
+        <button type="button" id="clear-completed" class="danger">Clear completed</button>
+      </section>
+
+      <ul id="todo-list" class="todo-list" aria-live="polite"></ul>
+      <p id="todo-count" class="todo-count">0 items left</p>
+    </main>
+
+    <template id="todo-item-template">
+      <li class="todo-item">
+        <label>
+          <input type="checkbox" class="toggle" />
+          <span class="text"></span>
+          <input type="text" class="edit-input" aria-label="Edit task" maxlength="120" />
+        </label>
+        <div class="actions">
+          <button type="button" class="edit">Edit</button>
+          <button type="button" class="save">Save</button>
+          <button type="button" class="cancel">Cancel</button>
+          <button type="button" class="delete" aria-label="Delete task">Delete</button>
+        </div>
+      </li>
+    </template>
+
+    <script src="todoStore.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
