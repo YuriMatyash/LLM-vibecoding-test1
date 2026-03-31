@@ -1,11 +1,13 @@
-const STORAGE_KEY = "todo-app-items-v2";
+const STORAGE_KEY = "todo-app-items-v3";
 
 let todos = loadTodos();
 let filter = "all";
 let editingId = null;
 
 const form = document.getElementById("todo-form");
-const input = document.getElementById("todo-input");
+const nameInput = document.getElementById("todo-name-input");
+const descriptionInput = document.getElementById("todo-description-input");
+const dueDateInput = document.getElementById("todo-due-date-input");
 const list = document.getElementById("todo-list");
 const template = document.getElementById("todo-item-template");
 const count = document.getElementById("todo-count");
@@ -14,8 +16,13 @@ const clearCompletedButton = document.getElementById("clear-completed");
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  todos = TodoStore.addTodo(todos, input.value);
-  input.value = "";
+  todos = TodoStore.addTodo(todos, {
+    name: nameInput.value,
+    description: descriptionInput.value,
+    dueDate: dueDateInput.value,
+  });
+
+  form.reset();
   persist();
   render();
 });
@@ -42,11 +49,19 @@ list.addEventListener("click", (event) => {
   if (target.classList.contains("edit")) {
     editingId = todoId;
     render();
+    return;
   }
 
   if (target.classList.contains("save")) {
-    const editInput = item.querySelector(".edit-input");
-    todos = TodoStore.editTodo(todos, todoId, editInput?.value || "");
+    const editNameInput = item.querySelector(".edit-name-input");
+    const editDescriptionInput = item.querySelector(".edit-description-input");
+    const editDueDateInput = item.querySelector(".edit-due-date-input");
+
+    todos = TodoStore.editTodo(todos, todoId, {
+      name: editNameInput?.value || "",
+      description: editDescriptionInput?.value || "",
+      dueDate: editDueDateInput?.value || "",
+    });
     editingId = null;
     persist();
     render();
@@ -76,29 +91,6 @@ list.addEventListener("change", (event) => {
   render();
 });
 
-list.addEventListener("keydown", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement) || !target.classList.contains("edit-input")) {
-    return;
-  }
-
-  const item = target.closest(".todo-item");
-  const todoId = item?.dataset.id;
-  if (!todoId) {
-    return;
-  }
-
-  if (event.key === "Enter") {
-    todos = TodoStore.editTodo(todos, todoId, target.value);
-    editingId = null;
-    persist();
-    render();
-  } else if (event.key === "Escape") {
-    editingId = null;
-    render();
-  }
-});
-
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     filter = button.dataset.filter || "all";
@@ -120,18 +112,33 @@ function render() {
 
   const visibleTodos = TodoStore.filterTodos(todos, filter);
 
+  if (!visibleTodos.length) {
+    const empty = document.createElement("li");
+    empty.className = "empty-state";
+    empty.textContent = "No tasks yet. Add one to get started.";
+    list.appendChild(empty);
+  }
+
   visibleTodos.forEach((todo) => {
     const fragment = template.content.cloneNode(true);
     const item = fragment.querySelector(".todo-item");
     const toggle = fragment.querySelector(".toggle");
-    const text = fragment.querySelector(".text");
-    const editInput = fragment.querySelector(".edit-input");
+    const name = fragment.querySelector(".name");
+    const description = fragment.querySelector(".description");
+    const dueDate = fragment.querySelector(".due-date");
+    const editNameInput = fragment.querySelector(".edit-name-input");
+    const editDescriptionInput = fragment.querySelector(".edit-description-input");
+    const editDueDateInput = fragment.querySelector(".edit-due-date-input");
 
     item.dataset.id = todo.id;
     item.classList.toggle("is-completed", todo.completed);
     toggle.checked = todo.completed;
-    text.textContent = todo.text;
-    editInput.value = todo.text;
+    name.textContent = todo.name;
+    description.textContent = todo.description || "No description";
+    dueDate.textContent = formatDueDate(todo.dueDate);
+    editNameInput.value = todo.name;
+    editDescriptionInput.value = todo.description;
+    editDueDateInput.value = todo.dueDate;
 
     if (editingId === todo.id) {
       item.classList.add("is-editing");
@@ -142,6 +149,15 @@ function render() {
 
   const remaining = TodoStore.countActive(todos);
   count.textContent = `${remaining} item${remaining === 1 ? "" : "s"} left`;
+}
+
+function formatDueDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return `Due: ${value}`;
+  }
+
+  return `Due: ${date.toLocaleDateString()}`;
 }
 
 function persist() {
