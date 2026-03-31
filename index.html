@@ -8,33 +8,70 @@
   </head>
   <body>
     <main class="app">
-      <h1>Todo List</h1>
-      <form id="todo-form" class="todo-form" autocomplete="off">
-        <label for="todo-input" class="sr-only">Add a task</label>
-        <input id="todo-input" type="text" placeholder="Add a task..." required maxlength="120" />
-        <button type="submit">Add</button>
-      </form>
+      <section class="bubble create-bubble" aria-label="Create a task">
+        <h1>Todo List</h1>
+        <p class="subtitle">Plan your day with color and priorities.</p>
+        <form id="todo-form" class="todo-form" autocomplete="off">
+          <label for="todo-name-input" class="sr-only">Task name</label>
+          <input id="todo-name-input" type="text" placeholder="Task name" required maxlength="120" />
 
-      <section class="toolbar" aria-label="Todo controls">
-        <div class="filters" role="group" aria-label="Filter tasks">
-          <button type="button" data-filter="all" class="filter is-active">All</button>
-          <button type="button" data-filter="active" class="filter">Active</button>
-          <button type="button" data-filter="completed" class="filter">Completed</button>
-        </div>
-        <button type="button" id="clear-completed" class="danger">Clear completed</button>
+          <label for="todo-description-input" class="sr-only">Task description</label>
+          <input id="todo-description-input" type="text" placeholder="Task description" maxlength="240" />
+
+          <label for="todo-due-date-input" class="sr-only">Due date</label>
+          <input id="todo-due-date-input" type="date" required />
+
+          <label for="todo-priority-input" class="sr-only">Priority</label>
+          <select id="todo-priority-input" required>
+            <option value="low">Low</option>
+            <option value="med" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+
+          <button type="submit">Add</button>
+        </form>
       </section>
 
-      <ul id="todo-list" class="todo-list" aria-live="polite"></ul>
-      <p id="todo-count" class="todo-count">0 items left</p>
+      <section class="bubble list-bubble" aria-label="Your tasks">
+        <section class="toolbar" aria-label="Todo controls">
+          <div class="filters" role="group" aria-label="Filter tasks">
+            <button type="button" data-filter="all" class="filter is-active">All</button>
+            <button type="button" data-filter="active" class="filter">Active</button>
+            <button type="button" data-filter="completed" class="filter">Completed</button>
+          </div>
+          <button type="button" id="clear-completed" class="danger">Clear completed</button>
+        </section>
+
+        <ul id="todo-list" class="todo-list" aria-live="polite"></ul>
+        <p id="todo-count" class="todo-count">0 items left</p>
+      </section>
     </main>
 
     <template id="todo-item-template">
       <li class="todo-item">
-        <label>
+        <label class="todo-details">
           <input type="checkbox" class="toggle" />
-          <span class="text"></span>
-          <input type="text" class="edit-input" aria-label="Edit task" maxlength="120" />
+          <span class="content">
+            <span class="name"></span>
+            <span class="description"></span>
+            <span class="meta-row">
+              <span class="due-date"></span>
+              <span class="priority"></span>
+            </span>
+          </span>
         </label>
+
+        <div class="edit-fields">
+          <input type="text" class="edit-name-input" aria-label="Edit task name" maxlength="120" />
+          <input type="text" class="edit-description-input" aria-label="Edit task description" maxlength="240" />
+          <input type="date" class="edit-due-date-input" aria-label="Edit due date" />
+          <select class="edit-priority-input" aria-label="Edit priority">
+            <option value="low">Low</option>
+            <option value="med">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
         <div class="actions">
           <button type="button" class="edit">Edit</button>
           <button type="button" class="save">Save</button>
